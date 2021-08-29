@@ -1,8 +1,8 @@
-from django.http.response import Http404
 from rest_framework import status
 from rest_framework.decorators import api_view
+from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.serializers import Serializer
+from rest_framework.generics import get_object_or_404
 
 from news.models import Article
 from news.api.serializers import ArticleSerializer
@@ -43,5 +43,44 @@ def article_detail_api_view(request, id):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     elif request.method=="DELETE":
+        article.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+class ArticleListCreateAPIView(APIView):
+
+    def get(self, request):
+        articles = Article.objects.filter(active=True)
+        serializer = ArticleSerializer(articles, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = ArticleSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ArticleDetailAPIView(APIView):
+    
+    def get_object(self, id):
+        article = get_object_or_404(Article, id=id)
+        return article
+
+    def get(self, request, id):
+        article = self.get_object(id)
+        serializer = ArticleSerializer(article)
+        return Response(serializer.data)
+
+    def put(self, request, id):
+        article = self.get_object(id)
+        serializer = ArticleSerializer(article, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, id):
+        article = self.get_object(id)
         article.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
