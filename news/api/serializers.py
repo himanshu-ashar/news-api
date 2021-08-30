@@ -1,12 +1,15 @@
 from django.utils.translation import activate
 from rest_framework import serializers
-from news.models import Article
+from news.models import Article, Journalist
 from datetime import datetime
 from django.utils.timesince import timesince
+
 
 class ArticleSerializer(serializers.ModelSerializer):
 
     time_since_publication = serializers.SerializerMethodField()
+    # author = serializers.StringRelatedField()
+    # author = JournalistSerializer()
 
     class Meta:
         model = Article
@@ -28,9 +31,18 @@ class ArticleSerializer(serializers.ModelSerializer):
 
     def validate_title(self, value):
         """Check that the title field is atleast 60 characters long."""
-        if len(value)<60:
-            raise serializers.ValidationError("The title has to be atleast 60 characters long.")
+        if len(value)<20:
+            raise serializers.ValidationError("The title has to be atleast 20 characters long.")
         return value    
+
+
+class JournalistSerializer(serializers.ModelSerializer):
+    articles = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name='article-detail', lookup_field="id")
+    # articles = ArticleSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Journalist
+        fields = "__all__"
 
 
 # class ArticleSerializer(serializers.Serializer):
